@@ -1,0 +1,49 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  remote_user: vagrant
+  gather_facts: false
+  tasks:
+
+    - name: Wait for ssh
+      become: false
+      wait_for:
+        port: 22
+        delay: 5
+        connect_timeout: 5
+        timeout: 360
+        host: "{{ ansible_host }}"
+      delegate_to: localhost
+
+    - name: Install python
+      raw: apt-get update && apt-get install -y python
+
+    - name: Create folder
+      file:
+        state: directory
+        mode: 0700
+        dest: /root/.ssh/
+
+    - name: Keys
+      copy:
+        src: ~/.ssh/id_rsa.pub
+        dest: /root/.ssh/authorized_keys
+        owner: root
+        mode: 0600
+      register: rsa
+      ignore_errors: true
+
+
+    - name: Check host
+      command: host -t A ansible.cc
+      register: ns
+      ignore_errors: true
+
+
+
+    - name: Debug message
+      pause:
+        seconds: 1
+        echo: false
+        prompt: "Working"
